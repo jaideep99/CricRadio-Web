@@ -4,7 +4,7 @@ import { Link } from "react-router-dom";
 const Match = (props) =>{
     const {teams,details,matchId,seriesId,onMatchClick} = props;
     return (
-        <div className="sidebar-contact" onClick={()=>{onMatchClick({"teams":teams,"details":details,"matchId":matchId})}}>
+        <div className="sidebar-contact" onClick={()=>{onMatchClick({"teams":teams,"details":details,"matchId":matchId,})}}>
             <div>
                 <div>
                     <span style={{fontFamily:"Poppins",fontWeight:"500",color:"#E9EDEF",fontSize:"14px"}}>{teams}</span>

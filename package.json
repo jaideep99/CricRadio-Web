@@ -16,7 +16,9 @@
     "react-dom": "^18.2.0",
     "react-router-dom": "^6.3.0",
     "react-scripts": "5.0.1",
+    "react-siriwave": "^2.1.0",
     "react-speech-kit": "^3.0.1",
+    "react-use-queue": "^0.1.3",
     "uuid": "^8.3.2",
     "uuidv4": "^6.2.13",
     "web-vitals": "^2.1.4"

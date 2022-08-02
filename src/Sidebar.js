@@ -23,9 +23,8 @@ const Sidebar = ({matches,matchSelect}) => {
                 </div>
             </header>
 
-            <div className="match-list">
-                <MatchList matches={matches} onMatchClick={matchSelect}/>
-            </div>
+            <MatchList matches={matches} onMatchClick={matchSelect}/>
+
         </aside>
     )
 

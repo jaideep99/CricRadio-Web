@@ -1,11 +1,13 @@
 import React from "react";
 import { useSpeechSynthesis } from "react-speech-kit";
-const Speech = () => {
+const Speech = (comm) => {
     const [value, setValue] = React.useState("");
     const { speak,voices } = useSpeechSynthesis();
     // const {voices} = speechSynthesis.getVoices()
     // console.log(voices.length)
     // console.log(voices)
+    // console.log("inside speech "+comm)
+    // speak({text:comm})
     return (
         <div className="speech">
             <div className="group">

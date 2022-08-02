@@ -7,52 +7,75 @@ import Sidebar from "./Sidebar";
 import Commentary from "./Commentary";
 import {matches} from "./constants";
 import { v4 as uuid } from 'uuid';
+import {useSpeechSynthesis} from "react-speech-kit";
 
 
+const sleep = (milliseconds) => {
+    return new Promise(resolve => setTimeout(resolve, milliseconds))
+}
+
+function Tts(comm){
+    const { speak,voices } = useSpeechSynthesis();
+    speak({text:comm})
+}
 
 
 class App extends Component{
-
     constructor() {
+        // const [value, setValue] = React.useState("");
+        // const { speak,voices } = useSpeechSynthesis();
+
         super();
         const uid = uuid();
-        const uniqueid = uid.slice(0,8)
+        const uniqueid = uid.slice(0, 8)
 
         this.state = {
-            isLoaded:false,
-            matches: matches,
+            isLoaded: false,
+            matches: [],
             uuid: uniqueid,
-            group: uniqueid+"-group",
-            instance:uniqueid+"-instance",
-            current: {"teams":matches[0].teams,"details":matches[0].details,"matchId":matches[0].matchId,"comm":{}},
+            // group: uniqueid + "-group",
+            group:"cricradio"+uniqueid,
+            // instance: uniqueid + "-instance",
+            instance:"",
+            listening:false,
+            current: {
+                "teams": "Select a Match",
+                "details": "Live Commentary",
+                "matchId": "",
+            },
+            comm: {"teamA":"","teamB":"","scoreA":"","scoreB":"","ball":"","commentary":""}
         }
-
 
 
         this.onMatchSelect = this.onMatchSelect.bind(this)
         this.createConsumer = this.createConsumer.bind(this)
         this.ListenComm = this.ListenComm.bind(this);
+        this.wrapper = this.wrapper.bind(this);
+        this.consume = this.consume.bind(this);
+        this.consumeCommentary = this.consumeCommentary.bind(this)
 
-        const promises = [this.createConsumer()];
-        Promise.all(promises).then(() => {
-            console.log("Consumer created successfully!")
-        })
+        this.wrapper()
+        console.log("created cons")
+    }
+
+    async wrapper(){
+        await this.createConsumer()
     }
 
     createConsumer() {
-        return fetch(`http://localhost:38082/consumers/${this.state.group}`,{
+        fetch(`http://localhost:38082/consumers/${this.state.group}`,{
             method:"POST",
             headers: { 'Content-Type': 'application/vnd.kafka.json.v2+json' },
             body:JSON.stringify({
-                "name": this.state.instance,
                 "format": "json",
-                "auto.offset.reset": "largest",
+                // "auto.offset.reset": "smallest",
                 "auto.commit.enable": "true"
             })
         })
             .then(res=>res.json())
             .then(
                     (result) => {
+                        this.setState({instance:result.instance_id})
                         console.log(result);
                         },
                     (error) => {
@@ -82,7 +105,8 @@ class App extends Component{
     }
 
     async ListenComm(matchId){
-        fetch(`http://localhost:38082/consumers/${this.state.group}/instances/${this.state.instance}/subscription`,{
+        this.state.listening = false
+        await fetch(`http://localhost:38082/consumers/${this.state.group}/instances/${this.state.instance}/subscription`,{
             method: "POST",
             headers: { 'Content-Type': 'application/vnd.kafka.json.v2+json' },
             body:JSON.stringify({
@@ -91,14 +115,55 @@ class App extends Component{
         }).then(
             (result)=>{
                 console.log(result)
+                console.log(result.body)
             },
             (error) => {
                 this.setState({error})
             }
         )
-
         console.log("subscription created successful")
 
+        this.consumeCommentary(matchId)
+
+    }
+
+    consume(){
+
+        fetch(`http://localhost:38082/consumers/${this.state.group}/instances/${this.state.instance}/records`,{
+            method:"GET",
+            headers: {'Accept': 'application/vnd.kafka.json.v2+json'}
+        }).then(res => res.json()).then(
+            (result)=>{
+                console.log(result)
+                var n = result.length
+                if(n>0){
+                    this.setState({comm:result[n-1].value})
+                    // this.value = result[n-1].value.commentary
+                    // this.listenCommentary(result[n-1].value.commentary)
+
+                }
+
+            },
+            (error)=>{
+                this.setState(error)
+            }
+        )
+    }
+    async consumeCommentary(matchId){
+
+        this.state.listening=true
+        console.log("consuming match : "+matchId)
+        // this.setState({comm:{"teamA":"West Indies","teamB":"India","scoreA":"(48.3/50 ov) 296/5","scoreB":"","commentary":"Thakur to Hope, 1 run. Yorker at fifth, nailed it. Dug out to cover.","ball":"48.3"}})
+
+        // while(this.state.listening){
+        //     console.log("setting state")
+        //     await sleep(5000)
+        // }
+        while(this.state.listening){
+            await this.consume()
+
+            await sleep(5000)
+        }
     }
 
     onMatchSelect(selection) {
@@ -106,9 +171,6 @@ class App extends Component{
         this.setState({current: selection})
     }
 
-    async listenCommentary(selection){
-
-    }
 
     render() {
       return (
@@ -128,123 +190,12 @@ class App extends Component{
               </Navbar>
               <div className="match-content">
                   <Sidebar matches={this.state.matches} matchSelect={this.onMatchSelect}/>
-                  <Commentary selection={this.state.current}/>
+                  <Commentary selection={this.state.current} comm={this.state.comm}/>
               </div>
           </div>
       )
   }
 }
-
-// function App() {
-//
-//   const matchlist=[{"teamA":"West Indies"
-//   ,"teamB":"India"
-//   ,"scoreA":"(48.3/50 ov) 296/5"
-//   ,"scoreB":""
-//   ,"commentary":"Thakur to Hope, 1 run. Yorker at fifth, nailed it. Dug out to cover."
-//   ,"ball":"48.3"}];
-//
-//
-//   const commentry={"teamA":"West Indies"
-//   ,"teamB":"India"
-//   ,"scoreA":"(48.3/50 ov) 296/5"
-//   ,"scoreB":""
-//   ,"commentary":"Thakur to Hope, 1 run. Yorker at fifth, nailed it. Dug out to cover."
-//   ,"ball":"48.3"};
-//
-//
-//
-//   return (
-//
-//   <div className='body'>
-//
-//   <div className='header'>
-//   <a className='title1' href='/' title="dumplinks.ga" >cric<span style={{color:"rgb(2, 128, 98)"}}>R</span>adio</a>
-//
-//   </div>
-//
-//   <div className="torso">
-//
-//
-//     <div>
-//   {/* <div class="matchList">
-//   <div class="horizontal-scroll-wrapper squares">
-//   <div class=" items">item 1</div>
-//   <div class=" items">item 2</div>
-//   <div class=" items">item 4</div>
-//   <div class=" items">item 3</div>
-//   <div class=" items">item 5</div>
-//   <div class=" items">item 6</div>
-//   <div class=" items">item 7</div>
-//   <div class=" items">item 8</div>
-//   <div class=" items">item 1</div>
-//   <div class=" items">item 1</div>
-//   <div class=" items">item 2</div>
-//   <div class=" items">item 1</div>
-//   <div class=" items">item 2</div>
-//   <div class=" items">item 4</div>
-//   <div class=" items">item 3</div>
-//   <div class=" items">item 5</div>
-//   <div class=" items">item 6</div>
-//   <div class=" items">item 7</div>
-//   <div class=" items">item 8</div>
-//   <div class=" items">item 1</div>
-//   <div class=" items">item 1</div>
-//   <div class=" items">item 2</div>
-// </div>
-//
-//
-// </div> */}
-// </div>
-//
-// <div className="MatchList">
-// <ul className="List">
-// {
-//
-// matchlist.map(n => {
-//   let temp=n.teamA+" vs "+n.teamB;
-//   return (
-//   <li class="card">
-//
-//   <p class="cardCont">{temp}</p>
-//
-//   </li>
-//   )
-// })
-// }
-// </ul>
-// </div>
-//
-//
-//
-// <div className='commentryDisp'>
-// <div className='strip'>
-//   <div style={{"margin-left":"20px","color":"#fff"}}>
-//     <p>{commentry.teamA}:{commentry.scoreA}
-//     </p>
-//     <p>{commentry.teamB}:{commentry.scoreB}
-//     </p>
-//   </div>
-//   <p className='mike'>mike</p>
-//
-// </div>
-//
-// <textarea className='screen' value={commentry.commentary}/>
-//
-//   <div className="App">
-//     <Speech/>
-//   </div>
-//
-//
-// </div>
-//
-//
-//
-//
-// </div>
-// </div>
-//   );
-// }
 
 export default App;
 

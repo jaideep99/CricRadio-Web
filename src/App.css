@@ -57,6 +57,22 @@ body {
   width: 100%;
 }
 
+.teams{
+  font-family: 'Poppins';
+  font-weight: 600;
+  font-size: 14px;
+  color: aliceblue;
+  padding: 4px 0px;
+}
+
+.scores{
+  font-family: 'Poppins';
+  font-weight: 400;
+  font-size: 12px;
+  color: aliceblue;
+
+}
+
 .sidebar {
   width: 400px;
   flex: 40%;
